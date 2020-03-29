@@ -44,14 +44,12 @@ def detector_resize_logits(results, logits, output_height, output_width, image_s
             logits[:, 0, :, :],  # N, 1, M, M
             results.pred_boxes,
             (output_height, output_width),
-            threshold=mask_threshold,
         )
     else:
         resized_logits = resize_masks(
             logits[:, :, :],  # N, M, M
             results.proposal_boxes,
             (output_height, output_width),
-            threshold=mask_threshold,
         )
     return resized_logits
 
