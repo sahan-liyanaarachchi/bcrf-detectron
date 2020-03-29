@@ -116,10 +116,14 @@ class PanopticFPN(nn.Module):
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
                 sem_seg_results, detector_results, batched_inputs, images.image_sizes
         ):
-
+            height = input_per_image.get("height", image_size[0])
+            width = input_per_image.get("width", image_size[1])
+            sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
+            sem_seg_r = sem_seg_postprocess(sem_seg_r, image_size, sem_seg_result.shape[1],
+                                            sem_seg_result.shape[2])
             if self.training:
                 losses = {}
-                sem_seg_losses = self.sem_seg_head.losses(torch.unsqueeze(sem_seg_result, 0), gt_sem_seg)
+                sem_seg_losses = self.sem_seg_head.losses(torch.unsqueeze(sem_seg_r, 0), gt_sem_seg)
                 if gt_masks is not None:
                     new_mask_loss = mask_rcnn_loss2(ins_logits, gt_masks, detector_result.proposal_boxes)
                 else:
