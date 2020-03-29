@@ -127,7 +127,7 @@ class PanopticFPN(nn.Module):
 
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
             ins_logits = detector_resize_logits(detector_result, ins_logits, height, width, image_size)
-            image_r = sem_seg_postprocess(input_per_image.get("image"), image_size, height, width)
+            image_r = sem_seg_postprocess(input_per_image.get("image").to(dtype=torch.float32), image_size, height, width)
 
             # .................................................................................
             bcrf_device = image_r.device
