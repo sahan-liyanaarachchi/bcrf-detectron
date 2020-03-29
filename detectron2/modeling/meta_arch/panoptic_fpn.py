@@ -149,6 +149,7 @@ class PanopticFPN(nn.Module):
             back_ground = back_ground.to(bcrf_device)
             ins_logits = torch.cat((ins_logits.to(dtype=back_ground.dtype), back_ground), dim=0)
             sem_seg_r, ins_logits = self.bcrf(image_r, sem_seg_r, ins_logits, obj_classes)
+            ins_logits = ins_logits[:-1]
             # ..................................................................................
             if self.training:
                 losses = {}
