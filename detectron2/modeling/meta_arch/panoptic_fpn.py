@@ -146,6 +146,7 @@ class PanopticFPN(nn.Module):
                 temp_ins_logits = ins_logits.permute((1, 2, 0))
                 back_ground, _ = torch.max(temp_ins_logits, dim=2)
                 back_ground = - back_ground
+            back_ground = torch.unsqueeze(back_ground, dim=0)
             back_ground = back_ground.to(bcrf_device)
             ins_logits = torch.cat((ins_logits.to(dtype=back_ground.dtype), back_ground), dim=0)
             sem_seg_r, ins_logits = self.bcrf(image_r, sem_seg_r, ins_logits, obj_classes)
