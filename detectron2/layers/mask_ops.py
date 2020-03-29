@@ -58,7 +58,7 @@ def resize_masks(masks, boxes, image_shape):
         ), "Default GPU_MEM_LIMIT in mask_ops.py is too small; try increasing it"
     chunks = torch.chunk(torch.arange(N, device=device), num_chunks)
 
-    img_masks = torch.zeros(
+    img_masks = -4 * torch.ones(
         N, img_h, img_w, device=device, dtype=torch.float
     )
     for inds in chunks:
