@@ -9,6 +9,7 @@ from detectron2.layers import Conv2d, ConvTranspose2d, ShapeSpec, cat, get_norm
 from detectron2.structures import Instances
 from detectron2.utils.events import get_event_storage
 from detectron2.utils.registry import Registry
+from detectron2.layers.roi_align import ROIAlign
 
 ROI_MASK_HEAD_REGISTRY = Registry("ROI_MASK_HEAD")
 ROI_MASK_HEAD_REGISTRY.__doc__ = """
@@ -71,6 +72,40 @@ def mask_logits_from_proposals(pred_mask_logits, instances):
     return pred_mask_logits, gt_masks, gt_classes
 
 
+def resize_back(logits: torch.Tensor, boxes: torch.Tensor, mask_size: int) -> torch.Tensor:
+    """
+    Crop each bitmask by the given box, and resize results to (mask_size, mask_size).
+    This can be used to prepare training targets for Mask R-CNN.
+    It has less reconstruction error compared to rasterization with polygons.
+    However we observe no difference in accuracy,
+    but BitMasks requires more memory to store all the masks.
+
+    Args:
+        boxes (Tensor): Nx4 tensor storing the boxes for each mask
+        mask_size (int): the size of the rasterized mask.
+
+    Returns:
+        Tensor:
+            A bool tensor of shape (N, mask_size, mask_size), where
+            N is the number of predicted boxes for this image.
+    """
+    assert len(boxes) == len(logits), "{} != {}".format(len(boxes), len(logits))
+    device = logits.device
+
+    batch_inds = torch.arange(len(boxes), device=device).to(dtype=boxes.dtype)[:, None]
+    rois = torch.cat([batch_inds, boxes.to(device=device)], dim=1)  # Nx5
+
+    bit_masks = logits.to(dtype=torch.float32)
+    rois = rois.to(device=device)
+    output = (
+        ROIAlign((mask_size, mask_size), 1.0, 0, aligned=True)
+            .forward(bit_masks[:, None, :, :], rois)
+            .squeeze(1)
+    )
+    # output = output >= 0.5
+    return output
+
+
 def mask_rcnn_loss2(pred_mask_logits, gt_masks, boxes):
     if gt_masks.dtype == torch.bool:
         gt_masks_bool = gt_masks
@@ -78,7 +113,7 @@ def mask_rcnn_loss2(pred_mask_logits, gt_masks, boxes):
         # Here we allow gt_masks to be float as well (depend on the implementation of rasterize())
         gt_masks_bool = gt_masks > 0.5
     mask_side_len = gt_masks.size(2)
-    # pred_mask_logits = resize_back(pred_mask_logits, boxes.tensor, mask_side_len).to(device=gt_masks_bool.device)
+    pred_mask_logits = resize_back(pred_mask_logits, boxes.tensor, mask_side_len).to(device=gt_masks_bool.device)
     # Log the training accuracy (using gt classes and 0.5 threshold)
     mask_incorrect = (pred_mask_logits > 0.0) != gt_masks_bool
     mask_accuracy = 1 - (mask_incorrect.sum().item() / max(mask_incorrect.numel(), 1.0))

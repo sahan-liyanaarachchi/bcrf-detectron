@@ -7,7 +7,7 @@ from torch import nn
 from detectron2.structures import ImageList
 
 from ..backbone import build_backbone
-from ..postprocessing import detector_postprocess, sem_seg_postprocess
+from ..postprocessing import detector_postprocess, sem_seg_postprocess, detector_resize_logits
 from ..proposal_generator import build_proposal_generator
 from ..roi_heads import build_roi_heads
 from .build import META_ARCH_REGISTRY
@@ -121,6 +121,7 @@ class PanopticFPN(nn.Module):
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
             sem_seg_r = sem_seg_postprocess(sem_seg_r, image_size, sem_seg_result.shape[1],
                                             sem_seg_result.shape[2])
+            ins_logits = detector_resize_logits(detector_result, ins_logits, height, width, image_size)
             if self.training:
                 losses = {}
                 sem_seg_losses = self.sem_seg_head.losses(torch.unsqueeze(sem_seg_r, 0), gt_sem_seg)
