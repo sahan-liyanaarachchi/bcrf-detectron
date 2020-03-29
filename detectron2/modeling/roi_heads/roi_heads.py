@@ -588,8 +588,8 @@ class StandardROIHeads(ROIHeads):
             pred_instances = self._forward_box(features, proposals)
             # During inference cascaded prediction is used: the mask and keypoints heads are only
             # applied to the top scoring box detections.
-            pred_instances = self.forward_with_given_boxes(features, pred_instances)
-            return pred_instances, {}
+            pred_instances, mask_logits, _, _, _ = self.forward_with_given_boxes(features, pred_instances)
+            return pred_instances, {}, mask_logits, [], []
 
     def forward_with_given_boxes(
             self, features: Dict[str, torch.Tensor], instances: List[Instances]
@@ -614,9 +614,9 @@ class StandardROIHeads(ROIHeads):
         assert not self.training
         assert instances[0].has("pred_boxes") and instances[0].has("pred_classes")
 
-        instances = self._forward_mask(features, instances)
+        instances, mask_logits, _, _, _ = self._forward_mask(features, instances)
         instances = self._forward_keypoint(features, instances)
-        return instances
+        return instances, mask_logits, [], [], {}
 
     def _forward_box(
             self, features: Dict[str, torch.Tensor], proposals: List[Instances]

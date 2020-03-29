@@ -17,6 +17,7 @@ from pytorch_permuto.pytorch_bcrf import PyTorchBCRF
 from crf.densecrf import DenseCRFParams
 
 from ..roi_heads.mask_head import mask_rcnn_loss2
+import copy
 
 __all__ = ["PanopticFPN"]
 
@@ -86,6 +87,7 @@ class PanopticFPN(nn.Module):
                   See the return value of
                   :func:`combine_semantic_and_instance_outputs` for its format.
         """
+        print(batched_inputs[0]['file_name'])
         images = [x["image"].to(self.device) for x in batched_inputs]
         images = [self.normalizer(x) for x in images]
         images = ImageList.from_tensors(images, self.backbone.size_divisibility)
@@ -110,20 +112,48 @@ class PanopticFPN(nn.Module):
             gt_instances = None
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
-        detector_results, detector_losses, ins_logits, gt_masks, gt_classses, mask_loss = self.roi_heads(
+        detector_results, detector_losses, ins_logits, gt_masks, gt_classes, mask_loss = self.roi_heads(
             images, features, proposals, gt_instances
         )
+        print(ins_logits.shape, sem_seg_results.shape)
+        pt_sem_seg_results = []
+        pt_detector_results = []
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
                 sem_seg_results, detector_results, batched_inputs, images.image_sizes
         ):
             height = input_per_image.get("height", image_size[0])
             width = input_per_image.get("width", image_size[1])
+            det_template = copy.deepcopy(detector_result)
+
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
-            sem_seg_r = sem_seg_postprocess(sem_seg_r, image_size, sem_seg_result.shape[1],
-                                            sem_seg_result.shape[2])
             ins_logits = detector_resize_logits(detector_result, ins_logits, height, width, image_size)
+            image_r = sem_seg_postprocess(input_per_image.get("image"), image_size, height, width)
+
+            # .................................................................................
+            bcrf_device = image_r.device
+            sem_seg_r = sem_seg_r.to(bcrf_device)
+            ins_logits = ins_logits.to(bcrf_device)
+            if self.training:
+                obj_classes = gt_classes
+            else:
+                obj_classes = det_template._fields.get('pred_classes')
+            obj_classes = obj_classes.to(bcrf_device)
+            obj_classes = torch.cat((obj_classes, torch.Tensor([80]).type(torch.int64)), dim=0)
+
+            if ins_logits.shape[0] == 0:
+                back_ground = torch.ones(ins_logits.shape[:2]) * 4  # max 98 % confidence
+            else:
+                temp_ins_logits = ins_logits.permute((1, 2, 0))
+                back_ground, _ = torch.max(temp_ins_logits, dim=2)
+                back_ground = - back_ground
+            back_ground = back_ground.to(bcrf_device)
+            ins_logits = torch.cat((ins_logits.to(dtype=back_ground.dtype), back_ground), dim=0)
+            sem_seg_r, ins_logits = self.bcrf(image_r, sem_seg_r, ins_logits, obj_classes)
+            # ..................................................................................
             if self.training:
                 losses = {}
+                sem_seg_r = sem_seg_postprocess(sem_seg_r, image_size, sem_seg_result.shape[1],
+                                                sem_seg_result.shape[2])
                 sem_seg_losses = self.sem_seg_head.losses(torch.unsqueeze(sem_seg_r, 0), gt_sem_seg)
                 if gt_masks is not None:
                     new_mask_loss = mask_rcnn_loss2(ins_logits, gt_masks, detector_result.proposal_boxes)
@@ -134,15 +164,21 @@ class PanopticFPN(nn.Module):
                 losses.update({k: v * self.instance_loss_weight for k, v in detector_losses.items()})
                 losses.update(proposal_losses)
                 return losses
+            else:
+                detector_r = detector_postprocess(det_template, height, width)
+                ins_probs = ins_logits.sigmoid()
+                detector_r.pred_masks = ins_probs >= 0.5
+                pt_sem_seg_results.append(sem_seg_r)
+                pt_detector_results.append(detector_r)
 
         processed_results = []
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
-                sem_seg_results, detector_results, batched_inputs, images.image_sizes
+                pt_sem_seg_results, pt_detector_results, batched_inputs, images.image_sizes
         ):
-            height = input_per_image.get("height", image_size[0])
-            width = input_per_image.get("width", image_size[1])
-            sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
-            detector_r = detector_postprocess(detector_result, height, width)
+            # height = input_per_image.get("height", image_size[0])
+            # width = input_per_image.get("width", image_size[1])
+            # sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
+            # detector_r = detector_postprocess(detector_result, height, width)
 
             processed_results.append({"sem_seg": sem_seg_r, "instances": detector_r})
 

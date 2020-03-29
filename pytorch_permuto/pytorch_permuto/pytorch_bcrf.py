@@ -64,7 +64,7 @@ class PyTorchBCRF(nn.Module):
 
         # Compatibility transform weights for semantic segmentation
         self.param_sem_compatibility = nn.Parameter(
-            torch.eye(len(stuff_labels)+1, dtype=torch.float32, device='cpu')
+            torch.eye(len(stuff_labels) + 1, dtype=torch.float32, device='cpu')
         )
 
         # Class-specific spacial kernel weights for instance segmentation
@@ -158,6 +158,6 @@ class PyTorchBCRF(nn.Module):
             sem_q = self._softmax(temp_sem_new)
             ins_q = self._softmax(temp_ins_new)
 
-        return sem_q, ins_q
+        return temp_sem_new, temp_ins_new  # sem_q, ins_q
 
 #  TODO(HARSHA) is reset_parameters method needed?

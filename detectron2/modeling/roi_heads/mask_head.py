@@ -242,12 +242,14 @@ def mask_rcnn_inference(pred_mask_logits, pred_instances):
     cls_agnostic_mask = pred_mask_logits.size(1) == 1
 
     if cls_agnostic_mask:
+        mask_logits = pred_mask_logits
         mask_probs_pred = pred_mask_logits.sigmoid()
     else:
         # Select masks corresponding to the predicted classes
         num_masks = pred_mask_logits.shape[0]
         class_pred = cat([i.pred_classes for i in pred_instances])
         indices = torch.arange(num_masks, device=class_pred.device)
+        mask_logits = pred_mask_logits[indices, class_pred][:, None]
         mask_probs_pred = pred_mask_logits[indices, class_pred][:, None].sigmoid()
     # mask_probs_pred.shape: (B, 1, Hmask, Wmask)
 
@@ -256,6 +258,8 @@ def mask_rcnn_inference(pred_mask_logits, pred_instances):
 
     for prob, instances in zip(mask_probs_pred, pred_instances):
         instances.pred_masks = prob  # (1, Hmask, Wmask)
+
+    return mask_logits
 
 
 class BaseMaskRCNNHead(nn.Module):
@@ -287,8 +291,8 @@ class BaseMaskRCNNHead(nn.Module):
             return instances, pred_mask_logits, gt_masks, gt_classes, {
                 "loss_mask": mask_rcnn_loss(x, instances, self.vis_period)}
         else:
-            mask_rcnn_inference(x, instances)
-            return instances
+            mask_logits = mask_rcnn_inference(x, instances)
+            return instances, mask_logits, [], [], {}
 
     def layers(self, x):
         """

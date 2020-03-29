@@ -6,7 +6,7 @@ from detectron2.layers.mask_ops import resize_masks
 from detectron2.structures import Instances
 
 
-def detector_resize_logits(results, logits, output_height, output_width, image_size, mask_threshold=0.5):
+def detector_resize_logits(results, logits, output_height, output_width, image_size):
     """
     Resize the output instances.
     The input images are often resized when entering an object detector.
