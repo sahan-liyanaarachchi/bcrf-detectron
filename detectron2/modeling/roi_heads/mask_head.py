@@ -19,6 +19,87 @@ The registered object will be called with `obj(cfg, input_shape)`.
 """
 
 
+def mask_logits_from_proposals(pred_mask_logits, instances):
+    """
+    Compute the mask prediction loss defined in the Mask R-CNN paper.
+
+    Args:
+        pred_mask_logits (Tensor): A tensor of shape (B, C, Hmask, Wmask) or (B, 1, Hmask, Wmask)
+            for class-specific or class-agnostic, where B is the total number of predicted masks
+            in all images, C is the number of foreground classes, and Hmask, Wmask are the height
+            and width of the mask predictions. The values are logits.
+        instances (list[Instances]): A list of N Instances, where N is the number of images
+            in the batch. These instances are in 1:1
+            correspondence with the pred_mask_logits. The ground-truth labels (class, box, mask,
+            ...) associated with each instance are stored in fields.
+
+    Returns:
+        mask_loss (Tensor): A scalar tensor containing the loss.
+    """
+    cls_agnostic_mask = pred_mask_logits.size(1) == 1
+    total_num_masks = pred_mask_logits.size(0)
+    mask_side_len = pred_mask_logits.size(2)
+    assert pred_mask_logits.size(2) == pred_mask_logits.size(3), "Mask prediction must be square!"
+
+    gt_classes = []
+    gt_masks = []
+    for instances_per_image in instances:
+        if len(instances_per_image) == 0:
+            continue
+        if not cls_agnostic_mask:
+            gt_classes_per_image = instances_per_image.gt_classes.to(dtype=torch.int64)
+            gt_classes.append(gt_classes_per_image)
+
+        gt_masks_per_image = instances_per_image.gt_masks.crop_and_resize(
+            instances_per_image.proposal_boxes.tensor, mask_side_len
+        ).to(device=pred_mask_logits.device)
+        # A tensor of shape (N, M, M), N=#instances in the image; M=mask_side_len
+        gt_masks.append(gt_masks_per_image)
+
+    if len(gt_masks) == 0:
+        return pred_mask_logits[:, 0, :, :], None, torch.Tensor().to(dtype=torch.int64)
+
+    gt_masks = cat(gt_masks, dim=0)
+
+    if cls_agnostic_mask:
+        pred_mask_logits = pred_mask_logits[:, 0]
+    else:
+        indices = torch.arange(total_num_masks)
+        gt_classes = cat(gt_classes, dim=0)
+        pred_mask_logits = pred_mask_logits[indices, gt_classes]
+
+    return pred_mask_logits, gt_masks, gt_classes
+
+
+def mask_rcnn_loss2(pred_mask_logits, gt_masks, boxes):
+    if gt_masks.dtype == torch.bool:
+        gt_masks_bool = gt_masks
+    else:
+        # Here we allow gt_masks to be float as well (depend on the implementation of rasterize())
+        gt_masks_bool = gt_masks > 0.5
+    mask_side_len = gt_masks.size(2)
+    # pred_mask_logits = resize_back(pred_mask_logits, boxes.tensor, mask_side_len).to(device=gt_masks_bool.device)
+    # Log the training accuracy (using gt classes and 0.5 threshold)
+    mask_incorrect = (pred_mask_logits > 0.0) != gt_masks_bool
+    mask_accuracy = 1 - (mask_incorrect.sum().item() / max(mask_incorrect.numel(), 1.0))
+    num_positive = gt_masks_bool.sum().item()
+    false_positive = (mask_incorrect & ~gt_masks_bool).sum().item() / max(
+        gt_masks_bool.numel() - num_positive, 1.0
+    )
+    false_negative = (mask_incorrect & gt_masks_bool).sum().item() / max(num_positive, 1.0)
+
+    storage = get_event_storage()
+    storage.put_scalar("mask_rcnn/accuracy", mask_accuracy)
+    storage.put_scalar("mask_rcnn/false_positive", false_positive)
+    storage.put_scalar("mask_rcnn/false_negative", false_negative)
+    # print(pred_mask_logits.shape,gt_masks.shape)
+    mask_loss = F.binary_cross_entropy_with_logits(
+        pred_mask_logits, gt_masks.to(dtype=torch.float32), reduction="mean"
+    )
+    # print(mask_loss)
+    return {"loss_mask": mask_loss}
+
+
 def mask_rcnn_loss(pred_mask_logits, instances, vis_period=0):
     """
     Compute the mask prediction loss defined in the Mask R-CNN paper.
@@ -167,7 +248,9 @@ class BaseMaskRCNNHead(nn.Module):
         """
         x = self.layers(x)
         if self.training:
-            return {"loss_mask": mask_rcnn_loss(x, instances, self.vis_period)}
+            pred_mask_logits, gt_masks, gt_classes = mask_logits_from_proposals(x, instances)
+            return instances, pred_mask_logits, gt_masks, gt_classes, {
+                "loss_mask": mask_rcnn_loss(x, instances, self.vis_period)}
         else:
             mask_rcnn_inference(x, instances)
             return instances
@@ -195,11 +278,11 @@ class MaskRCNNConvUpsampleHead(BaseMaskRCNNHead):
         super().__init__(cfg, input_shape)
 
         # fmt: off
-        num_classes       = cfg.MODEL.ROI_HEADS.NUM_CLASSES
-        conv_dims         = cfg.MODEL.ROI_MASK_HEAD.CONV_DIM
-        self.norm         = cfg.MODEL.ROI_MASK_HEAD.NORM
-        num_conv          = cfg.MODEL.ROI_MASK_HEAD.NUM_CONV
-        input_channels    = input_shape.channels
+        num_classes = cfg.MODEL.ROI_HEADS.NUM_CLASSES
+        conv_dims = cfg.MODEL.ROI_MASK_HEAD.CONV_DIM
+        self.norm = cfg.MODEL.ROI_MASK_HEAD.NORM
+        num_conv = cfg.MODEL.ROI_MASK_HEAD.NUM_CONV
+        input_channels = input_shape.channels
         cls_agnostic_mask = cfg.MODEL.ROI_MASK_HEAD.CLS_AGNOSTIC_MASK
         # fmt: on
 

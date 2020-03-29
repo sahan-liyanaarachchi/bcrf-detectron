@@ -16,6 +16,8 @@ from .semantic_seg import build_sem_seg_head
 from pytorch_permuto.pytorch_bcrf import PyTorchBCRF
 from crf.densecrf import DenseCRFParams
 
+from ..roi_heads.mask_head import mask_rcnn_loss2
+
 __all__ = ["PanopticFPN"]
 
 
@@ -108,7 +110,7 @@ class PanopticFPN(nn.Module):
             gt_instances = None
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
-        detector_results, detector_losses = self.roi_heads(
+        detector_results, detector_losses, ins_logits, gt_masks, gt_classses, mask_loss = self.roi_heads(
             images, features, proposals, gt_instances
         )
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
@@ -118,6 +120,11 @@ class PanopticFPN(nn.Module):
             if self.training:
                 losses = {}
                 sem_seg_losses = self.sem_seg_head.losses(torch.unsqueeze(sem_seg_result, 0), gt_sem_seg)
+                if gt_masks is not None:
+                    new_mask_loss = mask_rcnn_loss2(ins_logits, gt_masks, detector_result.proposal_boxes)
+                else:
+                    new_mask_loss = {"loss_mask": 0}
+                detector_losses.update(new_mask_loss)
                 losses.update(sem_seg_losses)
                 losses.update({k: v * self.instance_loss_weight for k, v in detector_losses.items()})
                 losses.update(proposal_losses)
