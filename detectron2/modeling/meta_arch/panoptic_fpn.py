@@ -13,6 +13,8 @@ from ..roi_heads import build_roi_heads
 from .build import META_ARCH_REGISTRY
 from .semantic_seg import build_sem_seg_head
 
+from pytorch_permuto.pytorch_bcrf import PyTorchBCRF
+from crf.densecrf import DenseCRFParams
 __all__ = ["PanopticFPN"]
 
 
@@ -45,6 +47,15 @@ class PanopticFPN(nn.Module):
         pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(3, 1, 1)
         pixel_std = torch.Tensor(cfg.MODEL.PIXEL_STD).to(self.device).view(3, 1, 1)
         self.normalizer = lambda x: (x - pixel_mean) / pixel_std
+
+        sem_params = DenseCRFParams(spatial_ker_weight=0.5, bilateral_ker_weight=0.5, alpha=100, beta=1, gamma=3)
+        ins_params = DenseCRFParams(spatial_ker_weight=0.5, bilateral_ker_weight=0.5, alpha=100, beta=2, gamma=3)
+
+        self.bcrf = PyTorchBCRF(sem_params=sem_params, ins_params=ins_params, num_labels=133,
+                                thing_labels=tuple(range(80)),
+                                stuff_labels=tuple(range(80, 133)),
+                                num_iterations=5)
+
         self.to(self.device)
 
     def forward(self, batched_inputs):
@@ -99,13 +110,16 @@ class PanopticFPN(nn.Module):
         detector_results, detector_losses = self.roi_heads(
             images, features, proposals, gt_instances
         )
+        for sem_seg_result, detector_result, input_per_image, image_size in zip(
+                sem_seg_results, detector_results, batched_inputs, images.image_sizes
+        ):
 
-        if self.training:
-            losses = {}
-            losses.update(sem_seg_losses)
-            losses.update({k: v * self.instance_loss_weight for k, v in detector_losses.items()})
-            losses.update(proposal_losses)
-            return losses
+            if self.training:
+                losses = {}
+                losses.update(sem_seg_losses)
+                losses.update({k: v * self.instance_loss_weight for k, v in detector_losses.items()})
+                losses.update(proposal_losses)
+                return losses
 
         processed_results = []
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
