@@ -163,7 +163,7 @@ class SemSegFPNHead(nn.Module):
             x, scale_factor=self.common_stride, mode="bilinear", align_corners=False
         )
         if self.training:
-            return x, self.losses(x, targets)
+            return x, {} #self.losses(x, targets)
         else:
             # x = F.interpolate(
             #     x, scale_factor=self.common_stride, mode="bilinear", align_corners=False

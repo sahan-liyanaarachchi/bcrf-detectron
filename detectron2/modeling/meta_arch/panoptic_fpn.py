@@ -15,6 +15,7 @@ from .semantic_seg import build_sem_seg_head
 
 from pytorch_permuto.pytorch_bcrf import PyTorchBCRF
 from crf.densecrf import DenseCRFParams
+
 __all__ = ["PanopticFPN"]
 
 
@@ -116,6 +117,7 @@ class PanopticFPN(nn.Module):
 
             if self.training:
                 losses = {}
+                sem_seg_losses = self.sem_seg_head.losses(torch.unsqueeze(sem_seg_result, 0), gt_sem_seg)
                 losses.update(sem_seg_losses)
                 losses.update({k: v * self.instance_loss_weight for k, v in detector_losses.items()})
                 losses.update(proposal_losses)
@@ -123,7 +125,7 @@ class PanopticFPN(nn.Module):
 
         processed_results = []
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
-            sem_seg_results, detector_results, batched_inputs, images.image_sizes
+                sem_seg_results, detector_results, batched_inputs, images.image_sizes
         ):
             height = input_per_image.get("height", image_size[0])
             width = input_per_image.get("width", image_size[1])
@@ -145,11 +147,11 @@ class PanopticFPN(nn.Module):
 
 
 def combine_semantic_and_instance_outputs(
-    instance_results,
-    semantic_results,
-    overlap_threshold,
-    stuff_area_limit,
-    instances_confidence_threshold,
+        instance_results,
+        semantic_results,
+        overlap_threshold,
+        stuff_area_limit,
+        instances_confidence_threshold,
 ):
     """
     Implement a simple combining logic following
