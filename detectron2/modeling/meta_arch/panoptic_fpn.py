@@ -127,7 +127,8 @@ class PanopticFPN(nn.Module):
 
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
             ins_logits = detector_resize_logits(detector_result, ins_logits, height, width, image_size)
-            image_r = sem_seg_postprocess(input_per_image.get("image").to(dtype=torch.float32), image_size, height, width)
+            image_r = sem_seg_postprocess(input_per_image.get("image").to(dtype=torch.float32), image_size, height,
+                                          width)
 
             # .................................................................................
             bcrf_device = image_r.device
@@ -138,7 +139,8 @@ class PanopticFPN(nn.Module):
             else:
                 obj_classes = det_template._fields.get('pred_classes')
             obj_classes = obj_classes.to(bcrf_device)
-            obj_classes = torch.cat((obj_classes, torch.Tensor([80]).type(torch.int64)), dim=0)
+            obj_classes = torch.cat((obj_classes, torch.Tensor([80]).type(torch.int64)), dim=0).to(
+                sem_seg_result.device)
 
             if ins_logits.shape[0] == 0:
                 back_ground = torch.ones(ins_logits.shape[:2]) * 4  # max 98 % confidence
