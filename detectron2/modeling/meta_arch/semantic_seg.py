@@ -159,12 +159,15 @@ class SemSegFPNHead(nn.Module):
             In inference, returns (predictions, {})
         """
         x = self.layers(features)
+        x = F.interpolate(
+            x, scale_factor=self.common_stride, mode="bilinear", align_corners=False
+        )
         if self.training:
-            return None, self.losses(x, targets)
+            return x, self.losses(x, targets)
         else:
-            x = F.interpolate(
-                x, scale_factor=self.common_stride, mode="bilinear", align_corners=False
-            )
+            # x = F.interpolate(
+            #     x, scale_factor=self.common_stride, mode="bilinear", align_corners=False
+            # )
             return x, {}
 
     def layers(self, features):
@@ -177,9 +180,9 @@ class SemSegFPNHead(nn.Module):
         return x
 
     def losses(self, predictions, targets):
-        predictions = F.interpolate(
-            predictions, scale_factor=self.common_stride, mode="bilinear", align_corners=False
-        )
+        # predictions = F.interpolate(
+        #     predictions, scale_factor=self.common_stride, mode="bilinear", align_corners=False
+        # )
         loss = F.cross_entropy(
             predictions, targets, reduction="mean", ignore_index=self.ignore_value
         )
