@@ -1,0 +1,12 @@
+_BASE_: "../Base-RCNN-FPN.yaml"
+MODEL:
+  META_ARCHITECTURE: "PanopticFPN"
+  MASK_ON: True
+  SEM_SEG_HEAD:
+    LOSS_WEIGHT: 0.5
+    NUM_CLASSES: 12
+  ROI_HEADS:
+    NUM_CLASSES: 8
+DATASETS:
+  TRAIN: ("cityscapes_train_panoptic_separated",)
+  TEST: ("cityscapes_val_panoptic_separated",)
