@@ -316,7 +316,7 @@ def _get_builtin_metadata(dataset_name):
             "keypoint_connection_rules": KEYPOINT_CONNECTION_RULES,
         }
     elif dataset_name == "cityscapes_panoptic_separated":
-        return _get_cityscapes_panoptic_seperated_meta() #cityscapes panoptic
+        return _get_cityscapes_panoptic_separated_meta() #cityscapes panoptic
     elif dataset_name == "cityscapes":
         # fmt: off
         CITYSCAPES_THING_CLASSES = [
