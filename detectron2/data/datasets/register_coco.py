@@ -76,11 +76,14 @@ def register_coco_panoptic_separated(
         instances_json (str): path to the json instance annotation file
     """
     panoptic_name = name + "_separated"
+    img_ext="jpg"
+    if "cityscapes" in name:
+        img_ext="png"
     DatasetCatalog.register(
         panoptic_name,
         lambda: merge_to_panoptic(
             load_coco_json(instances_json, image_root, panoptic_name),
-            load_sem_seg(sem_seg_root, image_root),
+            load_sem_seg(sem_seg_root, image_root, image_ext = img_ext),
         ),
     )
     MetadataCatalog.get(panoptic_name).set(
@@ -94,7 +97,7 @@ def register_coco_panoptic_separated(
     )
 
     semantic_name = name + "_stuffonly"
-    DatasetCatalog.register(semantic_name, lambda: load_sem_seg(sem_seg_root, image_root))
+    DatasetCatalog.register(semantic_name, lambda: load_sem_seg(sem_seg_root, image_root, image_ext = img_ext))
     MetadataCatalog.get(semantic_name).set(
         sem_seg_root=sem_seg_root, image_root=image_root, evaluator_type="sem_seg", **metadata
     )
