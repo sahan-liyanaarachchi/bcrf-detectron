@@ -168,6 +168,23 @@ _RAW_CITYSCAPES_SPLITS = {
     "cityscapes_fine_{task}_test": ("cityscapes/leftImg8bit/test", "cityscapes/gtFine/test"),
 }
 
+_PREDEFINED_SPLITS_CITYSCAPES_PANOPTIC = {
+    "cityscapes_train_panoptic": (
+        "cityscapes/panoptic_train",
+        "cityscapes/annotations/panoptic_train.json",
+        "cityscapes/panoptic_stuff_train",
+        "cityscapes/train",
+        "cityscapes/annotations/instances_train.json",
+    ),
+    "cityscapes_val_panoptic": (
+        "cityscapes/panoptic_val",
+        "cityscapes/annotations/panoptic_val.json",
+        "cityscapes/panoptic_stuff_val",
+        "cityscapes/val",
+        "cityscapes/annotations/instances_val.json"
+    ),
+}
+
 
 def register_all_cityscapes(root):
     for key, (image_dir, gt_dir) in _RAW_CITYSCAPES_SPLITS.items():
@@ -192,6 +209,22 @@ def register_all_cityscapes(root):
         )
         MetadataCatalog.get(sem_key).set(
             image_dir=image_dir, gt_dir=gt_dir, evaluator_type="sem_seg", **meta
+        )
+    for (
+        prefix,
+        (panoptic_root, panoptic_json, semantic_root, image_root, instances_json),
+    ) in _PREDEFINED_SPLITS_CITYSCAPES_PANOPTIC.items():
+        #prefix_instances = prefix[: -len("_panoptic")]
+        #instances_meta = MetadataCatalog.get(prefix_instances)
+        #image_root, instances_json = instances_meta.image_root, instances_meta.json_file
+        register_coco_panoptic_separated(
+            prefix,
+            _get_builtin_metadata("cityscapes_panoptic_separated"),
+            image_root,
+            os.path.join(root, panoptic_root),
+            os.path.join(root, panoptic_json),
+            os.path.join(root, semantic_root),
+            instances_json,
         )
 
 
