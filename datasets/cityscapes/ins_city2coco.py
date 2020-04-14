@@ -138,7 +138,16 @@ def convert_cityscapes_instance_only(
     img_id = 0
     ann_id = 0
     cat_id = 1
-    category_dict = {}
+    category_dict = {
+        'person': 24,
+        'rider': 25,
+        'car': 26,
+        'truck': 27,
+        'bus': 28,
+        'train': 31,
+        'motorcycle': 32,
+        'bicycle': 33,
+    }
 
     category_instancesonly = [
         'person',
@@ -202,9 +211,9 @@ def convert_cityscapes_instance_only(
                             ann['image_id'] = image['id']
                             ann['segmentation'] = obj['contours']
 
-                            if object_cls not in category_dict:
-                                category_dict[object_cls] = cat_id
-                                cat_id += 1
+                            #if object_cls not in category_dict:
+                            #    category_dict[object_cls] = cat_id
+                            #    cat_id += 1
                             ann['category_id'] = category_dict[object_cls]
                             ann['iscrowd'] = 0
                             ann['area'] = obj['pixelCount']
