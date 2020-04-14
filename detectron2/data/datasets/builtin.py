@@ -220,11 +220,11 @@ def register_all_cityscapes(root):
         register_coco_panoptic_separated(
             prefix,
             _get_builtin_metadata("cityscapes_panoptic_separated"),
-            image_root,
+            os.path.join(root, image_root),
             os.path.join(root, panoptic_root),
             os.path.join(root, panoptic_json),
             os.path.join(root, semantic_root),
-            instances_json,
+            os.path.join(root, instances_json),
         )
 
 
