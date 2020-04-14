@@ -315,7 +315,7 @@ def _get_builtin_metadata(dataset_name):
             "keypoint_flip_map": COCO_PERSON_KEYPOINT_FLIP_MAP,
             "keypoint_connection_rules": KEYPOINT_CONNECTION_RULES,
         }
-    elif dataset_name == "cityscapes_panoptic_seperated":
+    elif dataset_name == "cityscapes_panoptic_separated":
         return _get_cityscapes_panoptic_seperated_meta() #cityscapes panoptic
     elif dataset_name == "cityscapes":
         # fmt: off
