@@ -187,7 +187,7 @@ KEYPOINT_CONNECTION_RULES = [
     ("right_knee", "right_ankle", (255, 195, 77)),
 ]
 
-CITYSCAPES_CATERGORIES = [
+CITYSCAPES_CATEGORIES = [
     {'id': 7,'name': 'road','color': [128, 64, 128],'supercategory': 'flat','isthing': 0},
     {'id': 8,'name': 'sidewalk','color': [244, 35, 232],'supercategory': 'flat','isthing': 0},
     {'id': 11,'name': 'building','color': [70, 70, 70], 'supercategory': 'construction','isthing': 0},
