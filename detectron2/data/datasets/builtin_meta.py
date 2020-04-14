@@ -252,7 +252,7 @@ def _get_cityscapes_panoptic_separated_meta():
         "stuff_classes": stuff_classes,
         "stuff_colors": stuff_colors,
     }
-    ret.update(_get_coco_instances_meta())
+    ret.update(_get_cityscapes_instances_meta())
     return ret
 
 def _get_coco_instances_meta():
