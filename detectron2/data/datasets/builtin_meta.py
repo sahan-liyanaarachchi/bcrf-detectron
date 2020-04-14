@@ -187,7 +187,7 @@ KEYPOINT_CONNECTION_RULES = [
     ("right_knee", "right_ankle", (255, 195, 77)),
 ]
 
-CITYSCAPES_CATERGORIES = [
+CITYSCAPES_CATEGORIES = [
     {'id': 7,'name': 'road','color': [128, 64, 128],'supercategory': 'flat','isthing': 0},
     {'id': 8,'name': 'sidewalk','color': [244, 35, 232],'supercategory': 'flat','isthing': 0},
     {'id': 11,'name': 'building','color': [70, 70, 70], 'supercategory': 'construction','isthing': 0},
@@ -315,8 +315,8 @@ def _get_builtin_metadata(dataset_name):
             "keypoint_flip_map": COCO_PERSON_KEYPOINT_FLIP_MAP,
             "keypoint_connection_rules": KEYPOINT_CONNECTION_RULES,
         }
-    elif dataset_name == "cityscapes_panoptic_seperated":
-        return _get_cityscapes_panoptic_seperated_meta() #cityscapes panoptic
+    elif dataset_name == "cityscapes_panoptic_separated":
+        return _get_cityscapes_panoptic_separated_meta() #cityscapes panoptic
     elif dataset_name == "cityscapes":
         # fmt: off
         CITYSCAPES_THING_CLASSES = [
