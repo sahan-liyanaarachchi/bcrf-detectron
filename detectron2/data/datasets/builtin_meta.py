@@ -187,6 +187,73 @@ KEYPOINT_CONNECTION_RULES = [
     ("right_knee", "right_ankle", (255, 195, 77)),
 ]
 
+CITYSCAPES_CATERGORIES = [
+    {'id': 7,'name': 'road','color': [128, 64, 128],'supercategory': 'flat','isthing': 0},
+    {'id': 8,'name': 'sidewalk','color': [244, 35, 232],'supercategory': 'flat','isthing': 0},
+    {'id': 11,'name': 'building','color': [70, 70, 70], 'supercategory': 'construction','isthing': 0},
+    {'id': 12,'name': 'wall','color': [102, 102, 156], 'supercategory': 'construction','isthing': 0},
+    {'id': 13,'name': 'fence','color': [190, 153, 153],'supercategory': 'construction','isthing': 0},
+    {'id': 17,'name': 'pole','color': [153, 153, 153],'supercategory': 'object','isthing': 0},
+    {'id': 19,'name': 'traffic light','color': [250, 170, 30],'supercategory': 'object','isthing': 0},
+    {'id': 20,'name': 'traffic sign','color': [220, 220, 0],'supercategory': 'object', 'isthing': 0},
+    {'id': 21,'name': 'vegetation','color': [107, 142, 35], 'supercategory': 'nature','isthing': 0},
+    {'id': 22,'name': 'terrain','color': [152, 251, 152],'supercategory': 'nature','isthing': 0},
+    {'id': 23,'name': 'sky','color': [70, 130, 180],'supercategory': 'sky','isthing': 0},
+    {'id': 24,'name': 'person','color': [220, 20, 60],'supercategory': 'human','isthing': 1},
+    {'id': 25,'name': 'rider','color': [255, 0, 0],'supercategory': 'human','isthing': 1},
+    {'id': 26,'name': 'car','color': [0, 0, 142],'supercategory': 'vehicle','isthing': 1},
+    {'id': 27,'name': 'truck','color': [0, 0, 70],'supercategory': 'vehicle','isthing': 1},
+    {'id': 28,'name': 'bus','color': [0, 60, 100],'supercategory': 'vehicle', 'isthing': 1},
+    {'id': 31,'name': 'train','color': [0, 80, 100],'supercategory': 'vehicle','isthing': 1},
+    {'id': 32,'name': 'motorcycle','color': [0, 0, 230],'supercategory': 'vehicle','isthing': 1},
+    {'id': 33,'name': 'bicycle','color': [119, 11, 32],'supercategory': 'vehicle','isthing': 1}
+]
+
+def _get_cityscapes_instances_meta():
+    thing_ids = [k["id"] for k in CITYSCAPES_CATEGORIES if k["isthing"] == 1]
+    thing_colors = [k["color"] for k in CITYSCAPES_CATEGORIES if k["isthing"] == 1]
+    assert len(thing_ids) == 8, len(thing_ids)
+    # Mapping from the incontiguous COCO category id to an id in [0, 79]
+    thing_dataset_id_to_contiguous_id = {k: i for i, k in enumerate(thing_ids)}
+    thing_classes = [k["name"] for k in CITYSCAPES_CATEGORIES if k["isthing"] == 1]
+    ret = {
+        "thing_dataset_id_to_contiguous_id": thing_dataset_id_to_contiguous_id,
+        "thing_classes": thing_classes,
+        "thing_colors": thing_colors,
+    }
+    return ret
+
+def _get_cityscapes_panoptic_separated_meta():
+    """
+    Returns metadata for "separated" version of the panoptic segmentation dataset.
+    """
+    stuff_ids = [k["id"] for k in CITYSCAPES_CATEGORIES if k["isthing"] == 0]
+    assert len(stuff_ids) == 11, len(stuff_ids)
+
+    # For semantic segmentation, this mapping maps from contiguous stuff id
+    # (in [0, 53], used in models) to ids in the dataset (used for processing results)
+    # The id 0 is mapped to an extra category "thing".
+    stuff_dataset_id_to_contiguous_id = {k: i + 1 for i, k in enumerate(stuff_ids)}
+    # When converting COCO panoptic annotations to semantic annotations
+    # We label the "thing" category to 0
+    stuff_dataset_id_to_contiguous_id[0] = 0
+
+    # 54 names for COCO stuff categories (including "things")
+    stuff_classes = ["things"] + [
+        k["name"]
+        for k in CITYSCAPES_CATEGORIES
+        if k["isthing"] == 0
+    ]
+
+    # NOTE: I randomly picked a color for things
+    stuff_colors = [[82, 18, 128]] + [k["color"] for k in COCO_CATEGORIES if k["isthing"] == 0]
+    ret = {
+        "stuff_dataset_id_to_contiguous_id": stuff_dataset_id_to_contiguous_id,
+        "stuff_classes": stuff_classes,
+        "stuff_colors": stuff_colors,
+    }
+    ret.update(_get_coco_instances_meta())
+    return ret
 
 def _get_coco_instances_meta():
     thing_ids = [k["id"] for k in COCO_CATEGORIES if k["isthing"] == 1]
@@ -248,6 +315,8 @@ def _get_builtin_metadata(dataset_name):
             "keypoint_flip_map": COCO_PERSON_KEYPOINT_FLIP_MAP,
             "keypoint_connection_rules": KEYPOINT_CONNECTION_RULES,
         }
+    elif dataset_name == "cityscapes_panoptic_seperated":
+        return _get_cityscapes_panoptic_seperated_meta() #cityscapes panoptic
     elif dataset_name == "cityscapes":
         # fmt: off
         CITYSCAPES_THING_CLASSES = [
