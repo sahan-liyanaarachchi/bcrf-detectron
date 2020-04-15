@@ -124,8 +124,8 @@ class PanopticFPN(nn.Module):
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
                 sem_seg_results, detector_results, batched_inputs, images.image_sizes
         ):
-            height = input_per_image.get("height", image_size[0])
-            width = input_per_image.get("width", image_size[1])
+            height = input_per_image.get("height", image_size[0])//4
+            width = input_per_image.get("width", image_size[1])//4
             det_template = copy.deepcopy(detector_result)
 
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
@@ -176,12 +176,15 @@ class PanopticFPN(nn.Module):
                 height = input_per_image.get("height", image_size[0])
                 width = input_per_image.get("width", image_size[1])
                 detector_r = detector_postprocess(det_template, height, width)
-                #ins_logits = sem_seg_postprocess(ins_logits, ins_logits.shape[1:],height,
-                #                                width)
-                #sem_seg_r = sem_seg_postprocess(sem_seg_r, sem_seg_r.shape[1:], height,
-                #                                width)
-                ins_probs = ins_logits.sigmoid()
-                detector_r.pred_masks = ins_probs >= 0.5
+                if ins_logits.shape[0] != 0:
+                    ins_logits = sem_seg_postprocess(ins_logits, ins_logits.shape[1:],height,
+                                                    width)
+                    ins_probs = ins_logits.sigmoid()
+                    detector_r.pred_masks = ins_probs >= 0.5
+                sem_seg_r = sem_seg_postprocess(sem_seg_r, sem_seg_r.shape[1:], height,
+                                                width)
+                #ins_probs = ins_logits.sigmoid()
+                #detector_r.pred_masks = ins_probs >= 0.5
                 pt_sem_seg_results.append(sem_seg_r)
                 pt_detector_results.append(detector_r)
 
