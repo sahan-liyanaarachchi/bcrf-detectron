@@ -63,6 +63,7 @@ class PanopticFPN(nn.Module):
                                 stuff_labels=bcrf_stuff_labels,
                                 num_iterations=5)
         self.bcrf_bg_label = cfg.MODEL.ROI_HEADS.NUM_CLASSES
+        self.bcrf_down_factor = cfg.MODEL.BCRF_HEAD.DOWN_FACTOR
         self.to(self.device)
 
     def forward(self, batched_inputs):
@@ -124,8 +125,8 @@ class PanopticFPN(nn.Module):
         for sem_seg_result, detector_result, input_per_image, image_size in zip(
                 sem_seg_results, detector_results, batched_inputs, images.image_sizes
         ):
-            height = input_per_image.get("height", image_size[0])//4
-            width = input_per_image.get("width", image_size[1])//4
+            height = input_per_image.get("height", image_size[0])//self.bcrf_down_factor
+            width = input_per_image.get("width", image_size[1])//self.bcrf_down_factor
             det_template = copy.deepcopy(detector_result)
 
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
