@@ -173,7 +173,13 @@ class PanopticFPN(nn.Module):
                 losses.update(proposal_losses)
                 return losses
             else:
+                height = input_per_image.get("height", image_size[0])
+                width = input_per_image.get("width", image_size[1])
                 detector_r = detector_postprocess(det_template, height, width)
+                #ins_logits = sem_seg_postprocess(ins_logits, ins_logits.shape[1:],height,
+                #                                width)
+                #sem_seg_r = sem_seg_postprocess(sem_seg_r, sem_seg_r.shape[1:], height,
+                #                                width)
                 ins_probs = ins_logits.sigmoid()
                 detector_r.pred_masks = ins_probs >= 0.5
                 pt_sem_seg_results.append(sem_seg_r)
