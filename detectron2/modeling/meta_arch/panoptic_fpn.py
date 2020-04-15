@@ -159,7 +159,7 @@ class PanopticFPN(nn.Module):
             # ..................................................................................
             if self.training:
                 losses = {}
-                sem_seg_r = sem_seg_postprocess(sem_seg_r, image_size, sem_seg_result.shape[1],
+                sem_seg_r = sem_seg_postprocess(sem_seg_r, sem_seg_r.shape[1:], sem_seg_result.shape[1],
                                                 sem_seg_result.shape[2])
                 sem_seg_losses = self.sem_seg_head.losses(torch.unsqueeze(sem_seg_r, 0).to(gt_sem_seg.device),
                                                           gt_sem_seg)
