@@ -115,6 +115,7 @@ def getLabelID(self, instID):
 def convert_cityscapes_instance_only(
         data_dir, out_dir):
     """Convert from cityscapes format to COCO instance seg format - polygons"""
+    os.mkdirs(out_dir,exist_ok=True)
     sets = [
         'gtFine_val',
         'gtFine_train',

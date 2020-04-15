@@ -18,8 +18,9 @@ try:
 except Exception:
     raise Exception("Please load Cityscapes scripts from https://github.com/mcordts/cityscapesScripts")
 
-train_original_format_folder = '/home/sahanchamara99/data/cityscapes/gtFine/train/'
-val_original_format_folder = '/home/sahanchamara99/data/cityscapes/gtFine/val/'
+
+train_original_format_folder = '{}/gtFine/train/'.format(sys.argv[1])
+val_original_format_folder = '{}/gtFine/val/'.format(sys.argv[1])
 # folder to store panoptic PNGs
 train_out_folder = './panoptic_train/'
 val_out_folder = './panoptic_val'
