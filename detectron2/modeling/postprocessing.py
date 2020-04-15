@@ -6,7 +6,7 @@ from detectron2.layers.mask_ops import resize_masks
 from detectron2.structures import Instances
 
 
-def detector_resize_logits(results, logits, output_height, output_width, image_size):
+def detector_resize_logits(results, logits, output_height, output_width):
     """
     Resize the output instances.
     The input images are often resized when entering an object detector.
@@ -25,7 +25,7 @@ def detector_resize_logits(results, logits, output_height, output_width, image_s
     Returns:
         Instances: the resized output from the model, based on the output resolution
     """
-    scale_x, scale_y = (output_width / image_size[1], output_height / image_size[0])
+    scale_x, scale_y = (output_width / results.image_size[1], output_height / results.image_size[0])
     results = Instances((output_height, output_width), **results.get_fields())
 
     if results.has("pred_boxes"):
@@ -34,7 +34,7 @@ def detector_resize_logits(results, logits, output_height, output_width, image_s
         output_boxes = results.proposal_boxes
 
     output_boxes.scale(scale_x, scale_y)
-    output_boxes.clip(image_size)
+    output_boxes.clip(results.image_size)
 
     results = results[output_boxes.nonempty()]
 
@@ -43,13 +43,13 @@ def detector_resize_logits(results, logits, output_height, output_width, image_s
         resized_logits = resize_masks(
             logits[:, 0, :, :],  # N, 1, M, M
             results.pred_boxes,
-            (output_height, output_width),
+            results.image_size,
         )
     else:
         resized_logits = resize_masks(
             logits[:, :, :],  # N, M, M
             results.proposal_boxes,
-            (output_height, output_width),
+            results.image_size,
         )
     return resized_logits
 

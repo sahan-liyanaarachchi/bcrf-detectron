@@ -55,11 +55,14 @@ class PanopticFPN(nn.Module):
         sem_params = DenseCRFParams(spatial_ker_weight=0.5, bilateral_ker_weight=0.5, alpha=100, beta=1, gamma=3)
         ins_params = DenseCRFParams(spatial_ker_weight=0.5, bilateral_ker_weight=0.5, alpha=100, beta=2, gamma=3)
 
-        self.bcrf = PyTorchBCRF(sem_params=sem_params, ins_params=ins_params, num_labels=133,
-                                thing_labels=tuple(range(80)),
-                                stuff_labels=tuple(range(80, 133)),
+        bcrf_num_labels = cfg.MODEL.SEM_SEG_HEAD.NUM_CLASSES+cfg.MODEL.ROI_HEADS.NUM_CLASSES-1
+        bcrf_thing_labels = tuple(range(cfg.MODEL.ROI_HEADS.NUM_CLASSES))
+        bcrf_stuff_labels = tuple(range(cfg.MODEL.ROI_HEADS.NUM_CLASSES,bcrf_num_labels))
+        self.bcrf = PyTorchBCRF(sem_params=sem_params, ins_params=ins_params, num_labels=bcrf_num_labels,
+                                thing_labels=bcrf_thing_labels,
+                                stuff_labels=bcrf_stuff_labels,
                                 num_iterations=5)
-
+        self.bcrf_bg_label = cfg.MODEL.ROI_HEADS.NUM_CLASSES
         self.to(self.device)
 
     def forward(self, batched_inputs):
@@ -126,7 +129,7 @@ class PanopticFPN(nn.Module):
             det_template = copy.deepcopy(detector_result)
 
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
-            ins_logits = detector_resize_logits(detector_result, ins_logits, height, width, image_size)
+            ins_logits = detector_resize_logits(detector_result, ins_logits, height, width)
             image_r = sem_seg_postprocess(input_per_image.get("image").to(dtype=torch.float32), image_size, height,
                                           width).to(torch.device("cpu"))
 
@@ -139,7 +142,7 @@ class PanopticFPN(nn.Module):
             else:
                 obj_classes = det_template._fields.get('pred_classes')
             obj_classes = obj_classes.to(bcrf_device)
-            obj_classes = torch.cat((obj_classes, torch.Tensor([80]).type(torch.int64)), dim=0).to(
+            obj_classes = torch.cat((obj_classes, torch.Tensor([self.bcrf_bg_label]).type(torch.int64)), dim=0).to(
                 sem_seg_result.device)
 
             if ins_logits.shape[0] == 0:
