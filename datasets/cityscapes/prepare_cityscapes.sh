@@ -1,5 +1,6 @@
 CITYSCAPES_PATH="/home/sahanchamara99/data/cityscapes"
 
+mkdir annotations
 python pan_city2coco.py $CITYSCAPES_PATH
 python ins_city2coco.py --datadir $CITYSCAPES_PATH --outdir annotations
 mkdir train
