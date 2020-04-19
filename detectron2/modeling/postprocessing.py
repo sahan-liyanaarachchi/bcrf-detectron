@@ -51,6 +51,8 @@ def detector_resize_logits(results, logits, output_height, output_width):
             results.proposal_boxes,
             results.image_size,
         )
+    if resized_logits.shape[0] != 0:
+        resized_logits[resized_logits == 0] = -11 #background
     return resized_logits
 
 
