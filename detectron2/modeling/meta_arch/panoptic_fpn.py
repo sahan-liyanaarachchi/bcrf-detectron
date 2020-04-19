@@ -147,7 +147,7 @@ class PanopticFPN(nn.Module):
                 sem_seg_result.device)
 
             if ins_logits.shape[0] == 0:
-                back_ground = torch.ones(ins_logits.shape[1:]) * 4  # max 98 % confidence
+                back_ground = torch.ones(ins_logits.shape[1:]) * 11  # max 98 % confidence
             else:
                 temp_ins_logits = ins_logits.permute((1, 2, 0))
                 back_ground, _ = torch.max(temp_ins_logits, dim=2)
