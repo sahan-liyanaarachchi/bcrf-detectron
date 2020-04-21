@@ -100,10 +100,10 @@ class VisualizationDemo(object):
             vis_output = visualizer.draw_panoptic_seg_predictions(
                 panoptic_seg.to(self.cpu_device), segments_info
             )
-            vis_output_sem = visualizer.draw_pan_sem_predictions(
+            vis_output_sem = visualizer_sem.draw_pan_sem_predictions(
                 panoptic_seg.to(self.cpu_device), segments_info
             )
-            vis_output_ins= visualizer.draw_pan_ins_predictions(
+            vis_output_ins= visualizer_ins.draw_pan_ins_predictions(
                 panoptic_seg.to(self.cpu_device), segments_info
             )
         return vis_output, vis_output_sem, vis_output_ins
