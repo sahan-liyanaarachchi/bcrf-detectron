@@ -176,7 +176,7 @@ def convert_cityscapes_instance_only(
                             len(images), len(annotations)))
                     json_ann = json.load(open(os.path.join(root, filename)))
                     image = {}
-                    image['id'] = filename[:-len(ends_in % data_set.split('_')[0]) -1] #img_id
+                    image['id'] = filename[:-len(ends_in % data_set.split('_')[0])-1] #img_id
                     #img_id += 1
 
                     image['width'] = json_ann['imgWidth']
