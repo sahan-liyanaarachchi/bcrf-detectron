@@ -464,6 +464,87 @@ class Visualizer:
         self.overlay_instances(masks=masks, labels=labels, assigned_colors=colors, alpha=alpha)
 
         return self.output
+    
+    def draw_pan_sem_predictions(
+        self, panoptic_seg, segments_info, area_threshold=None, alpha=0.7
+    ):
+        """
+        Draw panoptic prediction results on an image.
+
+        Args:
+            panoptic_seg (Tensor): of shape (height, width) where the values are ids for each
+                segment.
+            segments_info (list[dict]): Describe each segment in `panoptic_seg`.
+                Each dict contains keys "id", "category_id", "isthing".
+            area_threshold (int): stuff segments with less than `area_threshold` are not drawn.
+
+        Returns:
+            output (VisImage): image object with visualizations.
+        """
+        pred = _PanopticPrediction(panoptic_seg, segments_info)
+
+        if self._instance_mode == ColorMode.IMAGE_BW:
+            self.output.img = self._create_grayscale_image(pred.non_empty_mask())
+
+        # draw mask for all semantic segments first i.e. "stuff"
+        for mask, sinfo in pred.semantic_masks():
+            category_idx = sinfo["category_id"]
+            try:
+                mask_color = [x / 255 for x in self.metadata.stuff_colors[category_idx]]
+            except AttributeError:
+                mask_color = None
+
+            text = self.metadata.stuff_classes[category_idx]
+            self.draw_binary_mask(
+                mask,
+                color=mask_color,
+                edge_color=_OFF_WHITE,
+                text=text,
+                alpha=alpha,
+                area_threshold=area_threshold,
+            )
+        return self.output
+    
+    def draw_pan_ins_predictions(
+        self, panoptic_seg, segments_info, area_threshold=None, alpha=0.7
+    ):
+        """
+        Draw panoptic prediction results on an image.
+
+        Args:
+            panoptic_seg (Tensor): of shape (height, width) where the values are ids for each
+                segment.
+            segments_info (list[dict]): Describe each segment in `panoptic_seg`.
+                Each dict contains keys "id", "category_id", "isthing".
+            area_threshold (int): stuff segments with less than `area_threshold` are not drawn.
+
+        Returns:
+            output (VisImage): image object with visualizations.
+        """
+        pred = _PanopticPrediction(panoptic_seg, segments_info)
+
+        if self._instance_mode == ColorMode.IMAGE_BW:
+            self.output.img = self._create_grayscale_image(pred.non_empty_mask())
+        # draw mask for all instances second
+        all_instances = list(pred.instance_masks())
+        if len(all_instances) == 0:
+            return self.output
+        masks, sinfo = list(zip(*all_instances))
+        category_ids = [x["category_id"] for x in sinfo]
+
+        try:
+            scores = [x["score"] for x in sinfo]
+        except KeyError:
+            scores = None
+        labels = _create_text_labels(category_ids, scores, self.metadata.thing_classes)
+
+        try:
+            colors = [random_color(rgb=True, maximum=1) for k in category_ids]
+        except AttributeError:
+            colors = None
+        self.overlay_instances(masks=masks, labels=labels, assigned_colors=colors, alpha=alpha)
+
+        return self.output
 
     def draw_dataset_dict(self, dic):
         """
