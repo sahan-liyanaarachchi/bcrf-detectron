@@ -121,8 +121,8 @@ if __name__ == "__main__":
     img_list = os.listdir(img_path)
     save_path = args.output
     for im in img_list:
-        img = read_image(os.join(img_path,im), format="BGR")
+        img = read_image(os.path.join(img_path,im), format="BGR")
         pan, sem, ins = demo.run_on_image(img)
-        pan.save(os.join(save_path,'{}_pan.png'.format(im[:-4])))
-        sem.save(os.join(save_path,'{}_sem.png'.format(im[:-4])))
-        ins.save(os.join(save_path,'{}_ins.png'.format(im[:-4])))
+        pan.save(os.path.join(save_path,'{}_pan.png'.format(im[:-4])))
+        sem.save(os.path.join(save_path,'{}_sem.png'.format(im[:-4])))
+        ins.save(os.path.join(save_path,'{}_ins.png'.format(im[:-4])))
