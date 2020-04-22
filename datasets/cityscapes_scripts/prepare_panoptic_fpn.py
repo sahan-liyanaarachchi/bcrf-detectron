@@ -7,6 +7,7 @@ import multiprocessing as mp
 import numpy as np
 import os
 import time
+import sys
 from fvcore.common.download import download
 from PIL import Image
 
@@ -78,7 +79,7 @@ def separate_coco_semantic_from_panoptic(panoptic_json, panoptic_root, sem_seg_r
 
 
 if __name__ == "__main__":
-    dataset_dir = os.path.dirname(__file__)
+    dataset_dir = sys.argv[1]
     for s in ["val", "train"]:
         separate_coco_semantic_from_panoptic(
             os.path.join(dataset_dir, "annotations/panoptic_{}.json".format(s)),
