@@ -18,18 +18,17 @@ try:
 except Exception:
     raise Exception("Please load Cityscapes scripts from https://github.com/mcordts/cityscapesScripts")
 
-
 train_original_format_folder = '{}/gtFine/train/'.format(sys.argv[1])
 val_original_format_folder = '{}/gtFine/val/'.format(sys.argv[1])
 # folder to store panoptic PNGs
-train_out_folder = './panoptic_train/'
-val_out_folder = './panoptic_val'
+train_out_folder = '{}/panoptic_train/'.format(sys.argv[1])
+val_out_folder = '{}/panoptic_val'.format(sys.argv[1])
 # json with segmentations information
-train_out_file = './annotations/panoptic_train.json'
-val_out_file = './annotations/panoptic_val.json'
+train_out_file = '{}/annotations/panoptic_train.json'.format(sys.argv[1])
+val_out_file = '{}/annotations/panoptic_val.json'.format(sys.argv[1])
+
 
 def panoptic_converter(original_format_folder, out_folder, out_file):
-
     if not os.path.isdir(out_folder):
         print("Creating folder {} for panoptic segmentation PNGs".format(out_folder))
         os.mkdir(out_folder)
@@ -58,7 +57,7 @@ def panoptic_converter(original_format_folder, out_folder, out_file):
 
         file_name = f.split('/')[-1]
         image_id = file_name.rsplit('_', 2)[0]
-        image_filename= '{}_leftImg8bit.png'.format(image_id)
+        image_filename = '{}_leftImg8bit.png'.format(image_id)
         # image entry, id for image is its filename without extension
         images.append({"id": image_id,
                        "width": original_format.shape[1],
@@ -86,7 +85,7 @@ def panoptic_converter(original_format_folder, out_folder, out_file):
             segment_id, color = id_generator.get_id_and_color(semantic_id)
             pan_format[mask] = color
 
-            area = np.sum(mask) # segment area computation
+            area = np.sum(mask)  # segment area computation
 
             # bbox computation for a segment
             hor = np.sum(mask, axis=0)
@@ -97,7 +96,7 @@ def panoptic_converter(original_format_folder, out_folder, out_file):
             vert_idx = np.nonzero(vert)[0]
             y = vert_idx[0]
             height = vert_idx[-1] - y + 1
-            bbox = [int(x), int(y), int(width),int(height)]
+            bbox = [int(x), int(y), int(width), int(height)]
 
             segm_info.append({"id": int(segment_id),
                               "category_id": int(semantic_id),
@@ -114,10 +113,11 @@ def panoptic_converter(original_format_folder, out_folder, out_file):
     d = {'images': images,
          'annotations': annotations,
          'categories': categories,
-        }
+         }
 
     save_json(d, out_file)
 
+
 if __name__ == "__main__":
-    panoptic_converter(val_original_format_folder,val_out_folder, val_out_file)
-    panoptic_converter(train_original_format_folder,train_out_folder, train_out_file)
+    panoptic_converter(val_original_format_folder, val_out_folder, val_out_file)
+    panoptic_converter(train_original_format_folder, train_out_folder, train_out_file)
