@@ -130,7 +130,8 @@ class PanopticFPN(nn.Module):
             det_template = copy.deepcopy(detector_result)
 
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
-            ins_logits = detector_resize_logits(detector_result, ins_logits, height, width)
+            ins_logits = detector_resize_logits(detector_result, ins_logits.sigmoid(), height, width)
+            ins_logits = -torch.log(-1 + 1/ins_logits)
             image_r = sem_seg_postprocess(input_per_image.get("image").to(dtype=torch.float32), image_size, height,
                                           width).to(torch.device("cpu"))
 
