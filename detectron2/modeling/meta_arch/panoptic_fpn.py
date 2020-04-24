@@ -131,7 +131,7 @@ class PanopticFPN(nn.Module):
 
             sem_seg_r = sem_seg_postprocess(sem_seg_result, image_size, height, width)
             ins_logits = detector_resize_logits(detector_result, ins_logits.sigmoid(), height, width)
-            ins_logits = -torch.log(-1 + 1/ins_logits)
+            
             image_r = sem_seg_postprocess(input_per_image.get("image").to(dtype=torch.float32), image_size, height,
                                           width).to(torch.device("cpu"))
 
@@ -150,6 +150,7 @@ class PanopticFPN(nn.Module):
             if ins_logits.shape[0] == 0:
                 back_ground = torch.ones(ins_logits.shape[1:]) * 11  # max 98 % confidence
             else:
+                ins_logits = -torch.log(-1 + 1/ins_logits)
                 temp_ins_logits = ins_logits.permute((1, 2, 0))
                 back_ground, _ = torch.max(temp_ins_logits, dim=2)
                 back_ground = - back_ground
