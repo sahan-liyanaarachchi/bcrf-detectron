@@ -1,80 +1,69 @@
 
-## Getting Started with Detectron2
-
-This document provides a brief intro of the usage of builtin command-line tools in detectron2.
-
-For a tutorial that involves actual coding with the API,
-see our [Colab Notebook](https://colab.research.google.com/drive/16jcaJoc6bCFAQ96jDe2HwtXj7BMD_-m5)
-which covers how to run inference with an
-existing model, and how to train a builtin model on a custom dataset.
-
-For more advanced tutorials, refer to our [documentation](https://detectron2.readthedocs.io/tutorials/extend.html).
-
-
-### Inference Demo with Pre-trained Models
-
-1. Pick a model and its config file from
-	[model zoo](https://github.com/facebookresearch/detectron2/blob/master/MODEL_ZOO.md),
-	for example, `mask_rcnn_R_50_FPN_3x.yaml`.
-2. We provide `demo.py` that is able to run builtin standard models. Run it with:
-```
-cd demo/
-python demo.py --config-file ../configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml \
-  --input input1.jpg input2.jpg \
-  [--other-options]
-  --opts MODEL.WEIGHTS detectron2://COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl
-```
-The configs are made for training, therefore we need to specify `MODEL.WEIGHTS` to a model from model zoo for evaluation.
-This command will run the inference and show visualizations in an OpenCV window.
-
-For details of the command line arguments, see `demo.py -h` or look at its source code
-to understand its behavior. Some common arguments are:
-* To run __on your webcam__, replace `--input files` with `--webcam`.
-* To run __on a video__, replace `--input files` with `--video-input video.mp4`.
-* To run __on cpu__, add `MODEL.DEVICE cpu` after `--opts`.
-* To save outputs to a directory (for images) or a file (for webcam or video), use `--output`.
-
-
 ### Training & Evaluation in Command Line
-
-We provide a script in "tools/{,plain_}train_net.py", that is made to train
-all the configs provided in detectron2.
-You may want to use it as a reference to write your own training script for a new research.
 
 To train a model with "train_net.py", first
 setup the corresponding datasets following
-[datasets/README.md](https://github.com/facebookresearch/detectron2/blob/master/datasets/README.md),
-then run:
-```
-cd tools/
-./train_net.py --num-gpus 8 \
-	--config-file ../configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml
-```
+[datasets/README.md](datasets/README.md)
 
-The configs are made for 8-GPU training.
-To train on 1 GPU, you may need to [change some parameters](https://arxiv.org/abs/1706.02677), e.g.:
-```
-./train_net.py \
-	--config-file ../configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
-	SOLVER.IMS_PER_BATCH 2 SOLVER.BASE_LR 0.0025
-```
+The path to the "bcrf-detectron/pytorch_permuto" must be added to the python path to commence training and evaluation.
+ 
+The two configs files for training and evaluation are;
+* configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml  for COCO
+* configs/Cityscapes-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml  for Cityscapes
 
-For most models, CPU training is not supported.
+The format of the config files is the same as detectron2.
+
+To start training the model starting from the detectron2 initiation download the pretrained model from [here](https://dl.fbaipublicfiles.com/detectron2/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x/139514569/model_final_c10459.pkl)
+```
+python tools/train_net.py --num-gpus 4 \
+	--config-file configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml SOLVER.BASE_LR 0.0025 SOLVER.IMS_PER_BATCH 1
+    MODEL.WEIGHTS /path/to/detectron2_pretrained/model
+```
+SOLVER.IMS_PER_BATCH 1 must not be altered as only one permutahedral lattice is initiated per model
+
+To start training training from another initiation change the MODELS.WEIGHTS parameter to path of the pretrained_model.
+During training the checkpoints and logs will be saved to bcrf-detectron/ouputs folder.
+
+To resume training from the previous check point,use 
+```
+python tools/train_net.py --num-gpus 4 \
+	--config-file configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml
+    --resume  SOLVER.BASE_LR 0.0025 SOLVER.IMS_PER_BATCH 1 
+```
+Note: To do this you must have at a checkpoint from the previous run in the bcrf-detectron/ouputs folder.
 
 To evaluate a model's performance, use
 ```
 ./train_net.py \
 	--config-file ../configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
-	--eval-only MODEL.WEIGHTS /path/to/checkpoint_file
+	--eval-only SOLVER.IMS_PER_BATCH 1 MODEL.WEIGHTS /path/to/checkpoint_file
 ```
 For more options, see `./train_net.py -h`.
 
-### Use Detectron2 APIs in Your Code
+To speed up training and to conserve memory we downsample images before feeding to the bcrf model. The downsampling factor can be changed by adding `MODEL.BCRF_HEAD.DOWN_FACTOR <factor>` argument.
+By default we have set,
+* COCO: `MODEL.BCRF_HEAD.DOWN_FACTOR 2`
+* CITYSCAPES `MODEL.BCRF_HEAD.DOWN_FACTOR 4`
 
-See our [Colab Notebook](https://colab.research.google.com/drive/16jcaJoc6bCFAQ96jDe2HwtXj7BMD_-m5)
-to learn how to use detectron2 APIs to:
-1. run inference with an existing model
-2. train a builtin model on a custom dataset
+Other useful config parameters
+```
+SOLVER.CHECKPOINT_PERIOD 1000  # checkpoint saving period
+TEST.EVAL_PERIOD 500 # evaluation period
+```
+ All the default config parameters can be found in bcrf-detectron/detectron2/confing/defaults.py
+ The default config parameters are modified by the config file and the arguments passed to the train_net.py script.
 
-See [detectron2/projects](https://github.com/facebookresearch/detectron2/tree/master/projects)
-for more ways to build your project on detectron2.
+### Inference with Pre-trained Models
+
+1. Download a pretrained model from [here](https://dl.fbaipublicfiles.com/detectron2/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x/139514569/model_final_c10459.pkl), say coco_pretrained.pth
+2. Ensure the path to the "bcrf-detectron/pytorch_permuto" folder is added to the python path
+3. Add all the images that needs a panoptic segmentation to one folder say,"image_folder".
+4. Run the following,
+```
+cd demo/
+python pan_vis.py --config-file ../configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml \
+  --input /path/to/"input_folder" \
+  --output /path/to/save/pan/segmentation
+  [--other-options]
+  --opts MODEL.WEIGHTS path/to/pretrained_model
+```
