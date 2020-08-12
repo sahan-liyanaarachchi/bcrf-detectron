@@ -1,7 +1,7 @@
 <img src=".github/Detectron2-Logo-Horz.svg" width="300" >
 
 bcrf-detectron is an integration of the bcrf model on top of the panoptic-fpn model of Facebook AI 
-[Detectron2](https://github.com/facebookresearch/detectron2),
+[Detectron2](https://github.com/facebookresearch/detectron2). The detectron2 repo was cloned and our bcrf model was added to it for end to end training of the bcrf model.
 
 <div align="center">
   <img src="https://user-images.githubusercontent.com/1381301/66535560-d3422200-eace-11e9-9123-5535d469db19.png"/>
@@ -15,11 +15,7 @@ See [INSTALL.md](INSTALL.md).
 
 ## Quick Start
 
-See [GETTING_STARTED.md](GETTING_STARTED.md),
-
-
-## Model Zoo and Baselines
-
+See [GETTING_STARTED.md](GETTING_STARTED.md), for training, evaluation and inference
 
 ## License
 
