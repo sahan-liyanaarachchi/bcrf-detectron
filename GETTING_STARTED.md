@@ -16,17 +16,17 @@ The format of the config files is the same as detectron2.
 To start training the model starting from the detectron2 initiation download the pretrained model from [here](https://dl.fbaipublicfiles.com/detectron2/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x/139514569/model_final_c10459.pkl)
 ```
 python tools/train_net.py --num-gpus 4 \
-	--config-file configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml SOLVER.BASE_LR 0.0025 SOLVER.IMS_PER_BATCH 1
+	--config-file configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml SOLVER.BASE_LR 0.0025 SOLVER.IMS_PER_BATCH 4
     MODEL.WEIGHTS /path/to/detectron2_pretrained/model
 ```
-SOLVER.IMS_PER_BATCH 1 must not be altered as only one permutahedral lattice is initiated per model
+SOLVER.IMS_PER_BATCH must be equal to the number of gpus used
 
 To start training training from another initiation change the MODELS.WEIGHTS parameter to path of the pretrained_model.
 During training the checkpoints and logs will be saved to bcrf-detectron/ouputs folder.
 
 To resume training from the previous check point,use 
 ```
-python tools/train_net.py --num-gpus 4 \
+python tools/train_net.py --num-gpus 1 \
 	--config-file configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml
     --resume  SOLVER.BASE_LR 0.0025 SOLVER.IMS_PER_BATCH 1 
 ```
@@ -34,7 +34,7 @@ Note: To do this you must have at a checkpoint from the previous run in the bcrf
 
 To evaluate a model's performance, use
 ```
-./train_net.py \
+./train_net.py --num-gpus 1\
 	--config-file ../configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml \
 	--eval-only SOLVER.IMS_PER_BATCH 1 MODEL.WEIGHTS /path/to/checkpoint_file
 ```
