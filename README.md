@@ -39,7 +39,7 @@ If you are citing us, please use:
 ```BibTeX
 @misc{jayasumana2019bipartite,
     title={Bipartite Conditional Random Fields for Panoptic Segmentation},
-    author={Sadeep Jayasumana and Kanchana Ranasinghe and Mayuka Jayawardhana and Sahan Liyanaarachchi and Harsha Ranasinghe and Sina Samangooei},
+    author={Sadeep Jayasumana and Kanchana Ranasinghe and Sahan Liyanaarachchi and Mayuka Jayawardhana and Harsha Ranasinghe and Sina Samangooei},
     year={2019},
     eprint={1912.05307},
     archivePrefix={arXiv},
