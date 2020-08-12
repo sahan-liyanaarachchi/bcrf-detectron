@@ -13,7 +13,7 @@ The two configs files for training and evaluation are;
 
 The format of the config files is the same as detectron2.
 
-To start training the model starting from the detectron2 initiation download the pretrained model from [here](https://dl.fbaipublicfiles.com/detectron2/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x/139514569/model_final_c10459.pkl)
+To start training the model starting from the detectron2 initiation, download the detectron2 pretrained model from [here](https://dl.fbaipublicfiles.com/detectron2/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x/139514569/model_final_c10459.pkl)
 ```
 python tools/train_net.py --num-gpus 4 \
 	--config-file configs/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x.yaml SOLVER.BASE_LR 0.0025 SOLVER.IMS_PER_BATCH 4
@@ -55,7 +55,7 @@ TEST.EVAL_PERIOD 500 # evaluation period
 
 ### Inference with Pre-trained Models
 
-1. Download a pretrained model from [here](https://dl.fbaipublicfiles.com/detectron2/COCO-PanopticSegmentation/panoptic_fpn_R_50_3x/139514569/model_final_c10459.pkl), say coco_pretrained.pth
+1. Download a pretrained model from [here](https://storage.cloud.google.com/bcrf-checkpoints/coco/model_0002999.pth), say coco_pretrained.pth
 2. Ensure the path to the "bcrf-detectron/pytorch_permuto" folder is added to the python path
 3. Add all the images that needs a panoptic segmentation to one folder say,"image_folder".
 4. Run the following,
