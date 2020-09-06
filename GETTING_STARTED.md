@@ -55,7 +55,7 @@ TEST.EVAL_PERIOD 500 # evaluation period
 
 ### Inference with Pre-trained Models
 
-1. Download a pretrained model from [here](https://storage.cloud.google.com/bcrf-checkpoints/coco/model_0002999.pth), say coco_pretrained.pth
+1. Download a pretrained model from [here](https://drive.google.com/drive/folders/1oMJ8nGt60aDJZBkjJnef_KBx8EBeDAa-?usp=sharing), say coco_pretrained.pth
 2. Ensure the path to the "bcrf-detectron/pytorch_permuto" folder is added to the python path
 3. Add all the images that needs a panoptic segmentation to one folder say,"image_folder".
 4. Run the following,
